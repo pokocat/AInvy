@@ -1,0 +1,7 @@
+# Minimal deps to run the backend in dev (mock data, no external sources).
+# Use this for local development / CI — it skips the heavy akshare/pandas stack.
+fastapi==0.118.0
+uvicorn[standard]==0.34.0
+pydantic==2.11.7
+httpx==0.28.1
+pytest==8.4.1

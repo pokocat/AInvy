@@ -1,0 +1,12 @@
+# Core API
+fastapi==0.118.0
+uvicorn[standard]==0.34.0
+pydantic==2.11.7
+httpx==0.28.1
+
+# Real data sources (only needed in prod / APP_ENV=prod)
+# akshare pulls in pandas + many transitive deps; keep it optional for dev.
+akshare==1.16.98
+
+# Dev / test
+pytest==8.4.1
