@@ -15,7 +15,7 @@ export default defineConfig(async (merge) => {
     // is replaced with a literal (otherwise it throws `process is not defined`
     // in the browser). Override via `TARO_APP_API=https://... npm run build:h5`.
     defineConstants: {
-      'process.env.TARO_APP_API': JSON.stringify(process.env.TARO_APP_API || 'http://localhost:8000')
+      'process.env.TARO_APP_API': JSON.stringify(process.env.TARO_APP_API ?? 'http://localhost:8000')
     },
     copy: { patterns: [], options: {} },
     framework: 'react',
