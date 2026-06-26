@@ -6,7 +6,9 @@ import type {
 // Backend base URL. Override at build time with TARO_APP_API, else default to
 // the local FastAPI dev server. Mini Program requires this host in the
 // "request 合法域名" whitelist (see chat's real-architecture note).
-const BASE = process.env.TARO_APP_API || 'http://localhost:8000'
+// Use `??` (not `||`) so an explicit empty string keeps same-origin requests
+// (`/api/...`) — that's how the Vercel build talks to the bundled FastAPI fn.
+const BASE = process.env.TARO_APP_API ?? 'http://localhost:8000'
 
 class ApiError extends Error {
   constructor(public status: number, public source: string, message: string) {

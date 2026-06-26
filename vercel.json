@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && npm install && TARO_APP_API= npm run build:h5",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{frontend/**,project/**,chats/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" }
+  ]
+}

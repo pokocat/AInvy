@@ -1,0 +1,7 @@
+# Vercel installs these for the api/ Python function (the FastAPI backend).
+# Kept to the lightweight dev/mock stack — no akshare/pandas — so the demo
+# function stays small and runs offline. Mirror of backend/requirements-dev.txt
+# minus the test-only deps.
+fastapi==0.118.0
+pydantic==2.11.7
+httpx==0.28.1
