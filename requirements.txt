@@ -3,5 +3,8 @@
 # function stays small and runs offline. Mirror of backend/requirements-dev.txt
 # minus the test-only deps.
 fastapi==0.118.0
-pydantic==2.11.7
+# pydantic 2.12.x ships pydantic-core 2.41.x, which has prebuilt wheels for
+# Python 3.14 (Vercel's build interpreter). 2.11.7's pydantic-core 2.33.2 had
+# no 3.14 wheel, so Vercel tried to compile it from Rust source and failed.
+pydantic==2.12.3
 httpx==0.28.1
