@@ -1,0 +1,38 @@
+/* H5-only global styles. Loaded from app.tsx only when TARO_ENV === 'h5'.
+   None of this is WXSS-safe: the remote @import, the `*` universal selector,
+   `::-webkit-scrollbar`, and the `input[type=range]` attribute selectors all
+   either fail to parse or do nothing on WeChat MP. On H5, Taro renders custom
+   elements (taro-view-core, …), so `*` is the reliable way to reset them. */
+
+/* Editorial web fonts (Noto Serif/Sans SC) for the simbao "早报" feel. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+/* Hide scrollbars to match the prototype's clean chrome. */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Range slider styling for the 定投计算器 / 买入金额. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  border-radius: 999px;
+  background: #e4ddcb;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid currentColor;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}

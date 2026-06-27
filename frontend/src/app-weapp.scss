@@ -1,0 +1,23 @@
+/* Mini-program-only reset. Loaded from app.tsx when TARO_ENV !== 'h5'.
+   WXSS rejects the `*` universal selector, so box-sizing is applied to the
+   concrete component tags used in the app instead. Keep this list in sync with
+   the @tarojs/components actually rendered (view/text/image/scroll-view/slider/
+   textarea, plus the usual interactive tags). */
+page,
+view,
+text,
+image,
+scroll-view,
+swiper,
+swiper-item,
+slider,
+textarea,
+input,
+button,
+navigator,
+cover-view,
+cover-image,
+movable-area,
+movable-view {
+  box-sizing: border-box;
+}
