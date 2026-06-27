@@ -42,6 +42,12 @@ async def source_error_handler(_request: Request, exc: SourceError) -> JSONRespo
     )
 
 
+@app.get("/", tags=["meta"])
+def root() -> dict[str, str]:
+    """Root ping so platform health checks (e.g. WeChat 云托管) get a 200."""
+    return {"status": "ok", "service": "投小AI API", "env": settings.app_env}
+
+
 @app.get("/api/health", response_model=HealthInfo, tags=["meta"])
 def health() -> HealthInfo:
     return HealthInfo(status="ok", env=settings.app_env)
