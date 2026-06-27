@@ -25,3 +25,7 @@ backend/.env
 # OS / editor
 .DS_Store
 *.log
+
+# WeChat DevTools (per-developer local files; never commit)
+project.private.config.json
+/project.config.json
