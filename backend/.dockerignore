@@ -1,0 +1,10 @@
+# 构建上下文 = backend/；把测试、缓存、本地 env 排除在镜像外。
+tests/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.env.*
+!.env.example
+requirements-dev.txt
+README.md
