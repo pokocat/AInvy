@@ -21,3 +21,12 @@ movable-area,
 movable-view {
   box-sizing: border-box;
 }
+
+/* Let a `flex: 1` <scroll-view> shrink below its content height inside a flex
+   column. WeChat's scroll-view defaults to min-height:auto (= content height),
+   so flex can't constrain it: it grows to fit all content and pushes the bottom
+   TabBar past the 100vh frame, where overflow:hidden clips it. min-height:0
+   restores the "scrollable middle + pinned bottom bar" layout. */
+scroll-view {
+  min-height: 0;
+}
