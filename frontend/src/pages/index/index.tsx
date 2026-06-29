@@ -1,6 +1,6 @@
 import { View, Text } from '@tarojs/components'
 import { useEffect, useState } from 'react'
-import { getTheme, ThemeKey } from '../../theme'
+import { getTheme, ThemeKey, Theme } from '../../theme'
 import { api, ApiError } from '../../services/api'
 import type {
   AnalyzeSamples, Brief, Fund, FundsPage, Message, Source, Tracking
@@ -21,6 +21,28 @@ const THEME_KEY: ThemeKey = 'ink_green'
 const FEED_STYLE: 'detailed' | 'compact' = 'detailed'
 const SERIF_TITLES = true
 
+type LoadKey = 'brief' | 'funds' | 'tracking' | 'messages' | 'sources' | 'samples'
+
+// In-shell placeholder: keeps the frame + nav visible while a section's data is
+// loading or after it failed, instead of blocking the whole app behind one gate.
+function ScreenState({ tk, error, onRetry }: { tk: Theme; error?: string; onRetry: () => void }) {
+  return (
+    <View style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: r(32), background: tk.bg }}>
+      {error ? (
+        <>
+          <Text style={{ fontFamily: tk.serif, fontSize: r(16), fontWeight: 800, color: tk.ink }}>加载失败</Text>
+          <Text style={{ fontSize: r(13), color: tk.sub, marginTop: r(8), textAlign: 'center', lineHeight: 1.6 }}>{error}</Text>
+          <View onClick={onRetry} style={{ marginTop: r(18), padding: `${r(9)} ${r(22)}`, borderRadius: r(999), background: tk.brand }}>
+            <Text style={{ fontSize: r(13), fontWeight: 700, color: tk.hero }}>重试</Text>
+          </View>
+        </>
+      ) : (
+        <Text style={{ color: tk.sub, fontSize: r(13) }}>加载中…</Text>
+      )}
+    </View>
+  )
+}
+
 export default function Index() {
   const tk = getTheme(THEME_KEY, SERIF_TITLES)
 
@@ -31,7 +53,9 @@ export default function Index() {
   const [messages, setMessages] = useState<Message[]>([])
   const [sources, setSources] = useState<Source[]>([])
   const [samples, setSamples] = useState<AnalyzeSamples | null>(null)
-  const [bootError, setBootError] = useState('')
+  // Per-section load errors (keyed). Sections load independently, so one failure
+  // marks only its own error and never blocks the shell or the other sections.
+  const [errs, setErrs] = useState<Record<string, string>>({})
 
   // --- ui state ---
   const [tab, setTab] = useState<TabKey>('home')
@@ -50,19 +74,24 @@ export default function Index() {
     toastTimer = setTimeout(() => setToast(''), 2000)
   }
 
-  // Load everything on mount. A failure surfaces (no fake data).
+  // Load each section independently. A failure marks only that section's error
+  // (shown inline with a retry) — it never blocks the shell or other sections.
+  const load = (key: LoadKey) => {
+    setErrs((e) => { const n = { ...e }; delete n[key]; return n })
+    const fail = (err: unknown) =>
+      setErrs((e) => ({ ...e, [key]: err instanceof ApiError ? `${err.source}：${err.message}` : '后端连接失败' }))
+    if (key === 'brief') api.brief().then(setBrief).catch(fail)
+    else if (key === 'funds') api.funds().then(setFundsPage).catch(fail)
+    else if (key === 'tracking') api.tracking().then(setTracking).catch(fail)
+    else if (key === 'messages') api.messages().then(setMessages).catch(fail)
+    else if (key === 'sources') api.sources().then(setSources).catch(fail)
+    else api.analyzeSamples().then(setSamples).catch(fail)
+  }
+
   useEffect(() => {
-    Promise.all([
-      api.brief(), api.funds(), api.tracking(), api.messages(), api.sources(), api.analyzeSamples()
-    ])
-      .then(([b, f, tr, msg, src, smp]) => {
-        setBrief(b); setFundsPage(f); setTracking(tr)
-        setMessages(msg); setSources(src); setSamples(smp)
-      })
-      .catch((err) => {
-        const msg = err instanceof ApiError ? `${err.source}：${err.message}` : '后端连接失败，请确认 API 已启动'
-        setBootError(msg)
-      })
+    const keys: LoadKey[] = ['brief', 'funds', 'tracking', 'messages', 'sources', 'samples']
+    keys.forEach(load)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const watchIds = tracking ? tracking.watch.map((w) => w.id) : []
@@ -95,34 +124,25 @@ export default function Index() {
   const statusDark = !!detail || showAnalyze || tab === 'home'
   const statusBg = detail || showAnalyze ? tk.hero : tab === 'home' ? tk.hero : tk.card
 
-  // --- boot / error / loading gates ---
-  if (bootError) {
-    return (
-      <Frame tk={tk} statusDark={false} statusBg={tk.card}>
-        <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: r(32), background: tk.bg }}>
-          <Text style={{ fontFamily: tk.serif, fontSize: r(18), fontWeight: 800, color: tk.ink }}>加载失败</Text>
-          <Text style={{ fontSize: r(13), color: tk.sub, marginTop: r(10), textAlign: 'center', lineHeight: 1.7 }}>{bootError}</Text>
-          <Text style={{ fontSize: r(12), color: tk.faint, marginTop: r(16), textAlign: 'center', lineHeight: 1.6 }}>请确认后端已启动：{'\n'}cd backend && uvicorn app.main:app --port 8000</Text>
-        </View>
-      </Frame>
-    )
-  }
-
-  if (!brief || !fundsPage || !tracking) {
-    return (
-      <Frame tk={tk} statusDark statusBg={tk.hero}>
-        <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tk.hero }}>
-          <Text style={{ color: tk.onHeroSub, fontSize: r(13) }}>投小AI 加载中…</Text>
-        </View>
-      </Frame>
-    )
-  }
-
+  // No full-screen gate: the shell (status bar + screen area + TabBar) always
+  // renders. Each tab shows its data once ready, else an in-shell loading/error
+  // placeholder with a retry — a broken section never hides the nav.
   let screen
-  if (tab === 'home') screen = <HomeScreen tk={tk} brief={brief} feedStyle={FEED_STYLE} onInfo={() => setShowSources(true)} />
-  else if (tab === 'funds') screen = <FundsScreen tk={tk} page={fundsPage} watch={watchIds} onOpen={openFund} toggleWatch={toggleWatch} />
-  else if (tab === 'holdings') screen = <HoldingsScreen tk={tk} positions={tracking.positions} watch={tracking.watch} fundsById={fundsById} onOpen={openFund} />
-  else screen = <MessagesScreen tk={tk} messages={messages} onGoHome={() => setTab('home')} />
+  if (tab === 'home') {
+    screen = brief
+      ? <HomeScreen tk={tk} brief={brief} feedStyle={FEED_STYLE} onInfo={() => setShowSources(true)} />
+      : <ScreenState tk={tk} error={errs.brief} onRetry={() => load('brief')} />
+  } else if (tab === 'funds') {
+    screen = fundsPage
+      ? <FundsScreen tk={tk} page={fundsPage} watch={watchIds} onOpen={openFund} toggleWatch={toggleWatch} />
+      : <ScreenState tk={tk} error={errs.funds} onRetry={() => load('funds')} />
+  } else if (tab === 'holdings') {
+    screen = tracking
+      ? <HoldingsScreen tk={tk} positions={tracking.positions} watch={tracking.watch} fundsById={fundsById} onOpen={openFund} />
+      : <ScreenState tk={tk} error={errs.tracking} onRetry={() => load('tracking')} />
+  } else {
+    screen = <MessagesScreen tk={tk} messages={messages} onGoHome={() => setTab('home')} />
+  }
 
   return (
     <Frame tk={tk} statusDark={statusDark} statusBg={statusBg}>
